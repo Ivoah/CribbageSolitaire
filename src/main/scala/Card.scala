@@ -1,8 +1,9 @@
 package net.ivoah.cribbagesolitaire
 
-import java.awt.geom.RoundRectangle2D
+import java.awt.geom.*
 import java.awt.{BasicStroke, Color}
 import javax.imageio.ImageIO
+import scala.collection.mutable
 import scala.swing.*
 
 object Suite extends Enumeration {
@@ -71,12 +72,45 @@ object Card {
   def apply(value: String, suite: Suite.Value): Card = Card(names.indexOf(value) + 1, suite)
 }
 
-case class Stack(cards: Seq[Card]) {
-  val spacing = 30
+object Dim extends Enumeration {
+  val All, None, Tail = Value
+}
 
-  def draw(x: Int, y: Int)(implicit g: Graphics2D): Unit = {
-    for ((card, i) <- cards.zipWithIndex) {
-      card.draw(x, y + i*spacing, i < cards.length - 1)
+class CardStack(cards: Card*) extends mutable.Stack[Card] {
+  this.addAll(cards)
+  val spacing = 25
+
+  def draw(x: Int, y: Int, dim: Dim.Value = Dim.Tail)(implicit g: Graphics2D): Unit = {
+    for ((card, i) <- this.reversed.zipWithIndex) {
+      card.draw(x, y + i*spacing, dim == Dim.All || (dim == Dim.Tail && i < this.size - 1))
     }
   }
+
+  def score: Map[String, Int] = Map(
+    "First card played to the stack is a Jack" -> {
+      if (this.size == 1 && this.head.value == 11) 2 else 0
+    },
+    "Stack total is exactly 15" -> {
+      if (this.value == 15) 2 else 0
+    },
+    "Stack total is exactly 31" -> {
+      if (this.value == 31) 2 else 0
+    },
+    "Set of 2, 3, or 4 of the same card" -> {
+      (2 to 4).findLast(n => this.size >= n && this.take(n).forall(c => c.value == this.head.value)).map(n => n.! / (n - 2).!).getOrElse(0)
+    },
+    "Run of 3 to 7 cards, in any order" -> {
+      (3 to 7).findLast(n => this.size >= n && this.take(n).map(_.value).sorted.toSeq.sliding(2).forall{case Seq(c1, c2) => c1 + 1 == c2}).getOrElse(0)
+    }
+  ).filter(_._2 > 0)
+
+  def value: Int = this.map(_.scoreValue).sum
+  def usable(stack: CardStack): Boolean = this.headOption.exists(_.scoreValue + stack.value <= 31)
+
+  def boundingBox(x: Int, y: Int): Rectangle = new Rectangle(
+    x,
+    y,
+    Card.size.width,
+    if (this.nonEmpty) Card.size.height + spacing*(this.size - 1) else 0
+  )
 }

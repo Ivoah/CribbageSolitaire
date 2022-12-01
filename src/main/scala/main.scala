@@ -4,16 +4,16 @@ import scala.swing.*
 
 @main
 def main(): Unit = {
-  var table = CardTable()
   val root = new MainFrame {
+    private val thisFrame = this
     menuBar = new MenuBar {
       contents ++= Seq(
         new MenuItem(Action("New game") {
-          println("ne wgame")
+          thisFrame.contents = CardTable()
         })
       )
     }
-    contents = table
+    contents = CardTable()
   }
 
   root.centerOnScreen()
