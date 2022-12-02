@@ -36,7 +36,7 @@ case class CardTable(tableau: Seq[CardStack], stack: CardStack, score: Int, make
     }
 
     g.setPaint(Color.WHITE)
-    g.drawString(s"Score: ${score}", 50, 25)
+    g.drawString(s"Score: $score", 50, 25)
     g.drawString(s"Total: ${stack.value}", 50, 40)
     stack.draw(50, 50, Dim.None)
     for (((k, v), i) <- stack.score.zipWithIndex) {
@@ -58,7 +58,7 @@ case class CardTable(tableau: Seq[CardStack], stack: CardStack, score: Int, make
   }
 
   mouse.clicks.reactions += {
-    case MouseReleased(source, point, modifiers, clicks, triggersPopup) =>
+    case MouseReleased(_, point, _, _, _) =>
       tableau.zipWithIndex.find { case (s, i) =>
         s.boundingBox(size.width - Card.size.width * 4 + Card.size.width*i, 0).contains(point)
         && s.usable(stack)

@@ -1,16 +1,16 @@
 package net.ivoah.cribbagesolitaire
 
-import scala.collection.mutable.Stack
+import scala.collection.mutable
 import scala.swing.*
 
 @main
 def main(): Unit = {
-  val undoStack = Stack[CardTable]()
+  val undoStack = mutable.Stack[CardTable]()
 
   val root = new MainFrame {
     private val thisFrame = this
 
-    private def makeMove(table: CardTable) = {
+    private def makeMove(table: CardTable): Unit = {
       undoStack.push(contents.head.asInstanceOf[CardTable])
       contents = table
       repaint()

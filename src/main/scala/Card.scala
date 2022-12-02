@@ -3,6 +3,7 @@ package net.ivoah.cribbagesolitaire
 import java.awt.geom.*
 import java.awt.{BasicStroke, Color}
 import javax.imageio.ImageIO
+import scala.annotation.targetName
 import scala.swing.*
 
 object Suite extends Enumeration {
@@ -115,5 +116,6 @@ case class CardStack(cards: Seq[Card] = Seq()) {
   def top: Card = cards.head
   def tail: CardStack = CardStack(cards.tail)
 
+  @targetName(":+")
   def :+(card: Card): CardStack = CardStack(card +: cards)
 }
