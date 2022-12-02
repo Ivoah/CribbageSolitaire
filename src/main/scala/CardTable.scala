@@ -1,12 +1,11 @@
 package net.ivoah.cribbagesolitaire
 
-import java.awt.{BasicStroke, Color}
 import java.awt.geom.RoundRectangle2D
-import scala.swing.*
-import scala.util.Random
-import scala.collection.mutable
+import java.awt.{BasicStroke, Color}
 import javax.swing.Timer
+import scala.swing.*
 import scala.swing.event.*
+import scala.util.Random
 
 object CardTable {
   def newGame(makeMove: CardTable => Unit): CardTable = CardTable(
