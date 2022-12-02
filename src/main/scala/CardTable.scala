@@ -10,7 +10,7 @@ import scala.swing.event.*
 
 object CardTable {
   def newGame(makeMove: CardTable => Unit): CardTable = CardTable(
-    Random.shuffle(Card.fullDeck).grouped(52/4).map(CardStack).toSeq,
+    Random.shuffle(Card.fullDeck).grouped(52/4).map(CardStack.apply).toSeq,
     CardStack(),
     0,
     makeMove
