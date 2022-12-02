@@ -8,13 +8,18 @@ import scala.collection.mutable
 import javax.swing.Timer
 import scala.swing.event.*
 
-class CardTable extends BorderPanel {
+object CardTable {
+  def newGame(makeMove: CardTable => Unit): CardTable = CardTable(
+    Random.shuffle(Card.fullDeck).grouped(52/4).map(CardStack).toSeq,
+    CardStack(),
+    0,
+    makeMove
+  )
+}
+
+case class CardTable(tableau: Seq[CardStack], stack: CardStack, score: Int, makeMove: CardTable => Unit) extends BorderPanel {
   focusable = true
   preferredSize = new Dimension(640, 480)
-
-  private val tableau = Random.shuffle(Card.fullDeck).grouped(52/4).map(s => CardStack(s*)).toSeq
-  private val stack = CardStack()
-  private var score = 0
 
   override def paintComponent(g: Graphics2D): Unit = {
     super.paintComponent(g)
@@ -48,11 +53,9 @@ class CardTable extends BorderPanel {
   }
 
   private val newStackButton: Button = new Button(Action("New stack") {
-    stack.clear()
-    newStackButton.peer.setEnabled(false)
-    repaint()
+    makeMove(CardTable(tableau, CardStack(), score, makeMove))
   }) {
-    enabled = false
+    enabled = !tableau.exists(_.usable(stack))
   }
 
   mouse.clicks.reactions += {
@@ -61,14 +64,16 @@ class CardTable extends BorderPanel {
         s.boundingBox(size.width - Card.size.width * 4 + Card.size.width*i, 0).contains(point)
         && s.usable(stack)
       }.map { case (s, i) =>
-        stack.push(s.pop())
-        score += stack.score.values.sum
-        if (!tableau.exists(_.usable(stack))) {
-          newStackButton.enabled = true
-        }
-        repaint()
+        makeMove(CardTable(
+          tableau.zipWithIndex.map {
+            case (s, `i`) => s.tail
+            case (s, _) => s
+          },
+          stack :+ s.top,
+          score + (stack :+ s.top).score.values.sum,
+          makeMove
+        ))
       }
-//    case e => println(e)
   }
 
   layout(newStackButton) = BorderPanel.Position.South
