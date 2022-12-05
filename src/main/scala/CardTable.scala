@@ -60,7 +60,7 @@ case class CardTable(tableau: Seq[CardStack], stack: CardStack, score: Int, make
   mouse.clicks.reactions += {
     case MouseReleased(_, point, _, _, _) =>
       tableau.zipWithIndex.find { case (s, i) =>
-        s.boundingBox(size.width - Card.size.width * 4 + Card.size.width*i, 0).contains(point)
+        s.topCardBoundingBox(size.width - Card.size.width * 4 + Card.size.width*i, 0).contains(point)
         && s.usable(stack)
       }.map { case (s, i) =>
         makeMove(CardTable(

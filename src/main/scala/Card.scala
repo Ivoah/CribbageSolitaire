@@ -113,6 +113,13 @@ case class CardStack(cards: Seq[Card] = Seq()) {
     if (cards.nonEmpty) Card.size.height + spacing*(cards.size - 1) else 0
   )
 
+  def topCardBoundingBox(x: Int, y: Int): Rectangle = new Rectangle(
+    x,
+    spacing*(cards.size - 1),
+    Card.size.width,
+    if (cards.nonEmpty) Card.size.height else 0
+  )
+
   def top: Card = cards.head
   def tail: CardStack = CardStack(cards.tail)
 
