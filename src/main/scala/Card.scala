@@ -1,73 +1,62 @@
 package net.ivoah.cribbagesolitaire
 
-import java.awt.geom.*
-import java.awt.{BasicStroke, Color}
-import javax.imageio.ImageIO
 import scala.annotation.targetName
-import scala.swing.*
+import org.scalajs.dom.{CanvasRenderingContext2D, HTMLImageElement}
 
 object Suite extends Enumeration {
   val Spades, Hearts, Clubs, Diamonds = Value
 }
 
 case class Card(value: Int, suite: Suite.Value) {
-  private val img: Image = ImageIO.read(getClass.getResource(s"/cards/front-${suite.id*13 + (value - 1)}.png"))
+  /*private*/ val img: HTMLImageElement = Image(s"target/scala-3.2.1/classes/cards/front-${suite.id * 13 + (value - 1)}.png")
   private val name = Card.names(value - 1)
   override def toString: String = s"$name of $suite"
 
   val scoreValue: Int = if (value >= 10) 10 else value
 
-  def draw(x: Int, y: Int, dim: Boolean = false)(implicit g: Graphics2D): Unit = {
-    val oldClip = g.getClip
-    val oldStroke = g.getStroke
-    val oldPaint = g.getPaint
+  def draw(x: Int, y: Int, dim: Boolean = false)(implicit ctx: CanvasRenderingContext2D): Unit = {
+    ctx.save()
 
-    g.setPaint(Color.BLACK)
-    g.setStroke(BasicStroke(1))
-
-    val border = RoundRectangle2D.Double(x, y, Card.size.width, Card.size.height, 10, 10)
-    g.setClip(border)
-    g.drawImage(img, x, y, Card.size.width, Card.size.height, null)
+    ctx.beginPath()
+    ctx.roundRect(x, y, Card.size._1, Card.size._2, 10)
+    ctx.closePath()
+    ctx.clip()
+    ctx.drawImage(Card.imgs((value, suite)), x, y, Card.size._1, Card.size._2)
     if (dim) {
-      g.setPaint(Color(0, 0, 0, 25))
-      g.fill(border)
+      ctx.fillStyle = "rgba(0, 0, 0, 0.25)"
+      ctx.fill()
     }
-    g.draw(border)
+    ctx.stroke()
 
-    g.setClip(oldClip)
-    g.setStroke(oldStroke)
-    g.setPaint(oldPaint)
+    ctx.restore()
   }
 
-  def drawBack(x: Int, y: Int)(implicit g: Graphics2D): Unit = {
-    val oldClip = g.getClip
-    val oldStroke = g.getStroke
-    val oldPaint = g.getPaint
+  def drawBack(x: Int, y: Int)(implicit ctx: CanvasRenderingContext2D): Unit = {
+  ctx.save()
 
-    g.setPaint(Color.BLACK)
-    g.setStroke(BasicStroke(1))
+  ctx.beginPath()
+  ctx.roundRect(x, y, Card.size._1, Card.size._2, 10)
+  ctx.closePath()
+  ctx.clip()
+  ctx.drawImage(Card.cardBack, x, y, Card.size._1, Card.size._2)
+  ctx.stroke()
 
-    val border = RoundRectangle2D.Double(x, y, Card.size.width, Card.size.height, 10, 10)
-    g.setClip(border)
-    g.drawImage(Card.cardBack, x, y, Card.size.width, Card.size.height, null)
-    g.draw(border)
-
-    g.setClip(oldClip)
-    g.setStroke(oldStroke)
-    g.setPaint(oldPaint)
+  ctx.restore()
   }
 }
 
 object Card {
-  val size: Dimension = new Dimension(80, 112)
+  val size: (Int, Int) = (80, 112)
   private val names = Seq(
     "Ace", "Two", "Three", "Four",
     "Five", "Six", "Seven", "Eight",
     "Nine", "Ten", "Jack", "Queen", "King"
   )
 
+  private val imgs = (1 to 13).flatMap(value => Suite.values.unsorted.map(suite => (value, suite) -> Image(s"target/scala-3.2.1/classes/cards/front-${suite.id * 13 + (value - 1)}.png"))).toMap
+
   val fullDeck: Seq[Card] = Suite.values.toSeq.flatMap(s => names.map(v => Card(v, s)))
-  private val cardBack: Image = ImageIO.read(getClass.getResource("/cards/back.png"))
+  private val cardBack = Image("target/scala-3.2.1/classes/cards/back.png")
 
   def apply(value: String, suite: Suite.Value): Card = Card(names.indexOf(value) + 1, suite)
 }
@@ -79,7 +68,7 @@ object Dim extends Enumeration {
 case class CardStack(cards: Seq[Card] = Seq()) {
   private val spacing = 25
 
-  def draw(x: Int, y: Int, dim: Dim.Value = Dim.Tail)(implicit g: Graphics2D): Unit = {
+  def draw(x: Int, y: Int, dim: Dim.Value = Dim.Tail)(implicit ctx: CanvasRenderingContext2D): Unit = {
     for ((card, i) <- cards.reverse.zipWithIndex) {
       card.draw(x, y + i*spacing, dim == Dim.All || (dim == Dim.Tail && i < cards.size - 1))
     }
@@ -106,20 +95,21 @@ case class CardStack(cards: Seq[Card] = Seq()) {
   def value: Int = cards.map(_.scoreValue).sum
   def usable(stack: CardStack): Boolean = cards.headOption.exists(_.scoreValue + stack.value <= 31)
 
-  def boundingBox(x: Int, y: Int): Rectangle = new Rectangle(
-    x,
-    y,
-    Card.size.width,
-    if (cards.nonEmpty) Card.size.height + spacing*(cards.size - 1) else 0
-  )
+  def clicked(x0: Int, y0: Int)(x1: Int, y1: Int): Boolean = {
+    x1 >= x0
+      && x1 < x0 + Card.size._1
+      && y1 >= y0
+      && y1 <= y0 + height
+  }
 
-  def topCardBoundingBox(x: Int, y: Int): Rectangle = new Rectangle(
-    x,
-    spacing*(cards.size - 1),
-    Card.size.width,
-    if (cards.nonEmpty) Card.size.height else 0
-  )
+  def topClicked(x0: Int, y0: Int)(x1: Int, y1: Int): Boolean = {
+    x1 >= x0
+      && x1 < x0 + Card.size._1
+      && y1 >= y0 + spacing * (cards.size - 1)
+      && y1 <= y0 + spacing * (cards.size - 1) + (if (cards.nonEmpty) Card.size._2 else 0)
+  }
 
+  def height: Int = if (cards.nonEmpty) Card.size._2 + spacing*(cards.size - 1) else 0
   def top: Card = cards.head
   def tail: CardStack = CardStack(cards.tail)
 

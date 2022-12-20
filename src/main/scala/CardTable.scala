@@ -1,10 +1,7 @@
 package net.ivoah.cribbagesolitaire
 
-import java.awt.geom.RoundRectangle2D
-import java.awt.{BasicStroke, Color}
-import javax.swing.Timer
-import scala.swing.*
-import scala.swing.event.*
+import org.scalajs.dom.CanvasRenderingContext2D
+
 import scala.util.Random
 
 object CardTable {
@@ -16,66 +13,65 @@ object CardTable {
   )
 }
 
-case class CardTable(tableau: Seq[CardStack], stack: CardStack, score: Int, makeMove: CardTable => Unit) extends BorderPanel {
-  focusable = true
-  preferredSize = new Dimension(640, 480)
+case class CardTable(tableau: Seq[CardStack], stack: CardStack, score: Int, makeMove: CardTable => Unit) {
+  def draw()(implicit ctx: CanvasRenderingContext2D): Unit = {
+    ctx.save()
 
-  override def paintComponent(g: Graphics2D): Unit = {
-    super.paintComponent(g)
-    implicit val implicitGraphics: Graphics2D = g
+    val textHeight = 10
 
-    g.setPaint(Color(0, 75, 0))
-    g.fillRect(0, 0, size.width, size.height)
+    ctx.fillStyle = "rgb(0, 75, 0)"
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height)
 
     for ((s, i) <- tableau.zipWithIndex) {
       s.draw(
-        size.width - Card.size.width*4 + Card.size.width*i,
+        ctx.canvas.width - Card.size._1*4 + Card.size._1*i,
         0,
         if (s.usable(stack)) Dim.Tail else Dim.All
       )
     }
 
-    g.setPaint(Color.WHITE)
-    g.drawString(s"Score: $score", 50, 25)
-    g.drawString(s"Total: ${stack.value}", 50, 40)
-    stack.draw(50, 50, Dim.None)
+    ctx.fillStyle = "white"
+    ctx.fillText(s"Score: $score", 50, 25)
+    ctx.fillText(s"Total: ${stack.value}", 50, 40)
+    if (tableau.exists(_.usable(stack))) {
+      stack.draw(50, 50, Dim.None)
+    } else {
+      stack.draw(50, 50, Dim.All)
+      ctx.fillText("New stack", 50, 60 + stack.height)
+    }
     for (((k, v), i) <- stack.score.zipWithIndex) {
-      g.drawString(
+      ctx.fillText(
         s"$k: $v",
         10,
-        size.height - g.getFontMetrics.getHeight*stack.score.size - 20 + g.getFontMetrics.getHeight*i
+        ctx.canvas.height - textHeight*stack.score.size - 20 + textHeight*i
       )
     }
 
-    g.setPaint(Color.BLACK)
-    g.fillOval(size.width - 10, size.height - 10, 5, 5)
+    ctx.restore()
   }
 
-  private val newStackButton: Button = new Button(Action("New stack") {
-    makeMove(CardTable(tableau, CardStack(), score, makeMove))
-  }) {
-    enabled = !tableau.exists(_.usable(stack))
+  def onclick(x: Int, y: Int)(implicit ctx: CanvasRenderingContext2D): Unit = {
+    if (!tableau.exists(_.usable(stack)) && stack.clicked(50, 50)(x, y)) {
+      makeMove(CardTable(tableau, CardStack(), score, makeMove))
+    }
+
+    tableau.zipWithIndex.find { case (s, i) =>
+      s.topClicked(ctx.canvas.width - Card.size._1 * 4 + Card.size._1*i, 0)(x, y)
+      && s.usable(stack)
+    }.foreach { case (s, i) =>
+      makeMove(CardTable(
+        tableau.zipWithIndex.map {
+          case (s, `i`) => s.tail
+          case (s, _) => s
+        },
+        stack :+ s.top,
+        score + (stack :+ s.top).score.values.sum,
+        makeMove
+      ))
+    }
   }
 
-  mouse.clicks.reactions += {
-    case MouseReleased(_, point, _, _, _) =>
-      tableau.zipWithIndex.find { case (s, i) =>
-        s.topCardBoundingBox(size.width - Card.size.width * 4 + Card.size.width*i, 0).contains(point)
-        && s.usable(stack)
-      }.map { case (s, i) =>
-        makeMove(CardTable(
-          tableau.zipWithIndex.map {
-            case (s, `i`) => s.tail
-            case (s, _) => s
-          },
-          stack :+ s.top,
-          score + (stack :+ s.top).score.values.sum,
-          makeMove
-        ))
-      }
-  }
+//  layout(newStackButton) = BorderPanel.Position.South
 
-  layout(newStackButton) = BorderPanel.Position.South
-
-  listenTo(mouse.clicks)
+//  listenTo(mouse.clicks)
 }

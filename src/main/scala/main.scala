@@ -1,37 +1,41 @@
 package net.ivoah.cribbagesolitaire
 
 import scala.collection.mutable
-import scala.swing.*
+import org.scalajs.dom.*
+import org.scalajs.dom.html.Canvas
 
 @main
 def main(): Unit = {
+  val canvas = document.createElement("canvas").asInstanceOf[Canvas]
+  implicit val ctx: CanvasRenderingContext2D = canvas.getContext("2d").asInstanceOf[CanvasRenderingContext2D]
+
+  var table: CardTable = null
   val undoStack = mutable.Stack[CardTable]()
 
-  val root = new MainFrame {
-    private val thisFrame = this
+  table = CardTable.newGame(newTable => {
+    undoStack.push(table)
+    table = newTable
+    table.draw()
+  })
 
-    private def makeMove(table: CardTable): Unit = {
-      undoStack.push(contents.head.asInstanceOf[CardTable])
-      contents = table
-      repaint()
+  canvas.addEventListener("click", (e: MouseEvent) => {
+    table.onclick(e.pageX.toInt, e.pageY.toInt)
+  })
+
+  document.addEventListener("DOMContentLoaded", e => {
+
+    canvas.width = window.innerWidth.toInt
+    canvas.height = window.innerHeight.toInt
+    document.body.appendChild(canvas)
+
+    scala.scalajs.js.timers.setTimeout(100) {
+      table.draw()
     }
+  })
 
-    menuBar = new MenuBar {
-      contents ++= Seq(
-        new MenuItem(Action("New game") {
-          makeMove(CardTable.newGame(makeMove))
-        }),
-        new MenuItem(Action("Undo") {
-          if (undoStack.nonEmpty) {
-            thisFrame.contents = undoStack.pop()
-            thisFrame.repaint()
-          }
-        })
-      )
-    }
-    contents = CardTable.newGame(makeMove)
-  }
-
-  root.centerOnScreen()
-  root.open()
+  window.addEventListener("resize", e => {
+    canvas.width = window.innerWidth.toInt
+    canvas.height = window.innerHeight.toInt
+    table.draw()
+  })
 }
