@@ -4,18 +4,23 @@ import scala.collection.mutable
 import org.scalajs.dom.*
 import org.scalajs.dom.html.Canvas
 
+val canvas = document.createElement("canvas").asInstanceOf[Canvas]
+implicit val ctx: CanvasRenderingContext2D = canvas.getContext("2d").asInstanceOf[CanvasRenderingContext2D]
+
+var table: CardTable = null
+val undoStack = mutable.Stack[CardTable]()
+
+def repaint(): Unit = {
+  table.draw()
+}
+
 @main
 def main(): Unit = {
-  val canvas = document.createElement("canvas").asInstanceOf[Canvas]
-  implicit val ctx: CanvasRenderingContext2D = canvas.getContext("2d").asInstanceOf[CanvasRenderingContext2D]
-
-  var table: CardTable = null
-  val undoStack = mutable.Stack[CardTable]()
 
   table = CardTable.newGame(newTable => {
     undoStack.push(table)
     table = newTable
-    table.draw()
+    repaint()
   })
 
   canvas.addEventListener("click", (e: MouseEvent) => {
@@ -29,13 +34,13 @@ def main(): Unit = {
     document.body.appendChild(canvas)
 
     scala.scalajs.js.timers.setTimeout(100) {
-      table.draw()
+      repaint()
     }
   })
 
   window.addEventListener("resize", e => {
     canvas.width = window.innerWidth.toInt
     canvas.height = window.innerHeight.toInt
-    table.draw()
+    repaint()
   })
 }

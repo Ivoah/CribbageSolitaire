@@ -5,7 +5,7 @@ import org.scalajs.dom.HTMLImageElement
 
 def Image(src: String): HTMLImageElement = {
   val element: HTMLImageElement = dom.document.createElement("img").asInstanceOf[HTMLImageElement]
-//  element.onload = (e: dom.Event) => ready = true
+  element.onload = (e: dom.Event) => repaint()
   element.src = src
 
   element
