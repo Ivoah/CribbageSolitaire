@@ -31,7 +31,7 @@ case class CardTable(tableau: Seq[CardStack], stack: CardStack, score: Int, make
     }
 
     ctx.fillStyle = "white"
-    ctx.fillText(s"Score: $score", 50, 25)
+    ctx.fillText(s"Score: $score/61", 50, 25)
     ctx.fillText(s"Total: ${stack.value}", 50, 40)
     if (tableau.exists(_.usable(stack))) {
       stack.draw(50, 50, Dim.None)
