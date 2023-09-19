@@ -20,11 +20,11 @@ case class CardTable(tableau: Seq[CardStack], stack: CardStack, score: Int, make
     val textHeight = 10
 
     ctx.fillStyle = "rgb(0, 75, 0)"
-    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+    ctx.fillRect(0, 0, WIDTH, HEIGHT)
 
     for ((s, i) <- tableau.zipWithIndex) {
       s.draw(
-        ctx.canvas.width - Card.size._1*4 + Card.size._1*i,
+        WIDTH - Card.size._1*4 + Card.size._1*i,
         0,
         if (s.usable(stack)) Dim.Tail else Dim.All
       )
@@ -43,7 +43,7 @@ case class CardTable(tableau: Seq[CardStack], stack: CardStack, score: Int, make
       ctx.fillText(
         s"$k: $v",
         10,
-        ctx.canvas.height - textHeight*stack.score.size - 20 + textHeight*i
+        HEIGHT - textHeight*stack.score.size - 20 + textHeight*i
       )
     }
 
@@ -56,7 +56,7 @@ case class CardTable(tableau: Seq[CardStack], stack: CardStack, score: Int, make
     }
 
     tableau.zipWithIndex.find { case (s, i) =>
-      s.topClicked(ctx.canvas.width - Card.size._1 * 4 + Card.size._1*i, 0)(x, y)
+      s.topClicked(WIDTH - Card.size._1 * 4 + Card.size._1*i, 0)(x, y)
       && s.usable(stack)
     }.foreach { case (s, i) =>
       makeMove(CardTable(

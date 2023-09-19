@@ -8,7 +8,7 @@ object Suite extends Enumeration {
 }
 
 case class Card(value: Int, suite: Suite.Value) {
-  /*private*/ val img: HTMLImageElement = Image(s"target/scala-3.2.1/classes/cards/front-${suite.id * 13 + (value - 1)}.png")
+  private val img: HTMLImageElement = Image(s"./target/scala-3.2.1/classes/cards/front-${suite.id * 13 + (value - 1)}.png")
   private val name = Card.names(value - 1)
   override def toString: String = s"$name of $suite"
 
@@ -21,7 +21,7 @@ case class Card(value: Int, suite: Suite.Value) {
     ctx.roundRect(x, y, Card.size._1, Card.size._2, 10)
     ctx.closePath()
     ctx.clip()
-    ctx.drawImage(Card.imgs((value, suite)), x, y, Card.size._1, Card.size._2)
+    ctx.drawImage(img, x, y, Card.size._1, Card.size._2)
     if (dim) {
       ctx.fillStyle = "rgba(0, 0, 0, 0.25)"
       ctx.fill()
@@ -53,10 +53,8 @@ object Card {
     "Nine", "Ten", "Jack", "Queen", "King"
   )
 
-  private val imgs = (1 to 13).flatMap(value => Suite.values.unsorted.map(suite => (value, suite) -> Image(s"target/scala-3.2.1/classes/cards/front-${suite.id * 13 + (value - 1)}.png"))).toMap
-
   val fullDeck: Seq[Card] = Suite.values.toSeq.flatMap(s => names.map(v => Card(v, s)))
-  private val cardBack = Image("target/scala-3.2.1/classes/cards/back.png")
+  private val cardBack = Image("./target/scala-3.2.1/classes/cards/back.png")
 
   def apply(value: String, suite: Suite.Value): Card = Card(names.indexOf(value) + 1, suite)
 }
