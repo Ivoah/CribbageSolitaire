@@ -46,9 +46,6 @@ case class CardTable(tableau: Seq[CardStack], stack: CardStack, score: Int, make
         size.height - g.getFontMetrics.getHeight*stack.score.size - 20 + g.getFontMetrics.getHeight*i
       )
     }
-
-    g.setPaint(Color.BLACK)
-    g.fillOval(size.width - 10, size.height - 10, 5, 5)
   }
 
   private val newStackButton: Button = new Button(Action("New stack") {
